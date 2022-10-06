@@ -1,7 +1,6 @@
 import socket
 
 
-
 def receive_message_ending_with_token(active_socket, buffer_size, eof_token):
     """
     Same implementation as in receive_message_ending_with_token() in server.py
@@ -15,21 +14,20 @@ def receive_message_ending_with_token(active_socket, buffer_size, eof_token):
     print("Receiving message from server.....")
     res_content = b''
     while True:
-        print("IN")
+        # print("IN")
         _encodedData = active_socket.recv(buffer_size)
         # res_content.extend(_encodedData)
         if _encodedData[-10:] == eof_token.encode():
-            print("IN-if")
+            # print("IN-if")
             res_content += _encodedData[:-10]
-            print("IN-if-OUT")
+            # print("IN-if-OUT")
             break
         else:
-            print("IN-eles")
+            # print("IN-eles")
             res_content += _encodedData
-            print("IN-else-OUT")
-    print("OUT")
+            # print("IN-else-OUT")
+    # print("OUT")
     return res_content
-
 
     # raise NotImplementedError('Your implementation here.')
 
@@ -45,18 +43,17 @@ def initialize(host, port):
     :return: the created socket object
     """
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect((host,port))
+    client.connect((host, port))
     global eof_token
     eof_token = client.recv(1024).decode()
-        # _ack,message = data.split('|')
-        # if cmd == "DISCONNECTED":
-        #     print(f"[CLIENT---SERVER]: {msg}")
-        #     break
-        # elif cmd == "200":
-        #     print(f"{msg}")
+    # _ack,message = data.split('|')
+    # if cmd == "DISCONNECTED":
+    #     print(f"[CLIENT---SERVER]: {msg}")
+    #     break
+    # elif cmd == "200":
+    #     print(f"{msg}")
 
     print('Connected to server at IP:', host, 'and Port:', port)
-
 
     print('Handshake Done. EOF is:', eof_token)
     cwd = f'{receive_message_ending_with_token(client,1024,eof_token).decode()}'
@@ -75,9 +72,9 @@ def issue_cd(command_and_arg, client_socket, eof_token):
     :param client_socket: the active client socket object.
     :param eof_token: a token to indicate the end of the message.
     """
-    client_socket.sendall(command_and_arg.encode())
+    client_socket.sendall((command_and_arg+eof_token).encode())
     print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
-    getUserInput(client_socket)
+    # getUserInput(client_socket)
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -90,9 +87,9 @@ def issue_mkdir(command_and_arg, client_socket, eof_token):
     :param client_socket: the active client socket object.
     :param eof_token: a token to indicate the end of the message.
     """
-    client_socket.sendall(command_and_arg.encode())
+    client_socket.sendall((command_and_arg+eof_token).encode())
     print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
-    getUserInput(client_socket)
+    # getUserInput(client_socket)
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -105,9 +102,9 @@ def issue_rm(command_and_arg, client_socket, eof_token):
     :param client_socket: the active client socket object.
     :param eof_token: a token to indicate the end of the message.
     """
-    client_socket.sendall(command_and_arg.encode())
+    client_socket.sendall((command_and_arg+eof_token).encode())
     print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
-    getUserInput(client_socket)
+    # getUserInput(client_socket)
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -120,17 +117,20 @@ def issue_ul(command_and_arg, client_socket, eof_token):
     :param client_socket: the active client socket object.
     :param eof_token: a token to indicate the end of the message.
     """
-    command,arguments = command_and_arg
-    with open(arguments, 'rb') as file:
-        fileContent = file.read()
-    fileContentWithToken = fileContent + eof_token.encode()
-    client_socket.sendall(" ".join(command_and_arg).encode())
-    print(f'[LOG]Uploding the file "{arguments}" to: server')
-    # print("fileContentWithToken",fileContentWithToken)
-    client_socket.sendall(fileContentWithToken)
-    print(f'[LOG]File "{arguments}" uploaded to: server')
-    print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
-    getUserInput(client_socket)
+    command, arguments = command_and_arg
+    try:
+        with open(arguments, 'rb') as file:
+            fileContent = file.read()
+        fileContentWithToken = fileContent + eof_token.encode()
+        client_socket.sendall(" ".join(command_and_arg+eof_token).encode())
+        print(f'[LOG]Uploding the file "{arguments}" to: server')
+        # print("fileContentWithToken",fileContentWithToken)
+        client_socket.sendall(fileContentWithToken)
+        print(f'[LOG]File "{arguments}" uploaded to: server')
+        print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
+    except:
+        print("[LOG] Somthing Went wrong...  :(")
+    # getUserInput(client_socket)
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -145,48 +145,26 @@ def issue_dl(command_and_arg, client_socket, eof_token):
     :param eof_token: a token to indicate the end of the message.
     :return:
     """
-    command,arguments = command_and_arg
-    client_socket.sendall(" ".join(command_and_arg).encode())
-    print(f'[LOG]Waiting for server responce for the file "{arguments}"')
-    fileContent = receive_message_ending_with_token(client_socket,1024,eof_token)
-    print(f'[LOG]File "{arguments}" recived from server')
-    print(f'[LOG]Saving file "{arguments}" to the root folder.')
-    with open(arguments, 'wb') as file:
-        file.write(fileContent)
-    file.close()
-    print(f'[LOG]File "{arguments}" saved to the root folder.')
-    print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
-    getUserInput(client_socket)
+    command, arguments = command_and_arg
+    try:
+        client_socket.sendall(" ".join(command_and_arg+eof_token).encode())
+        print(f'[LOG]Waiting for server responce for the file "{arguments}"')
+        fileContent = receive_message_ending_with_token(
+            client_socket, 1024, eof_token)
+        print(f'[LOG]File "{arguments}" recived from server')
+        print(f'[LOG]Saving file "{arguments}" to the root folder.')
+        with open(arguments, 'wb') as file:
+            file.write(fileContent)
+        file.close()
+        print(f'[LOG]File "{arguments}" saved to the root folder.')
+        print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
+    except:
+        print("[LOG] Somthing Went wrong...  :(")
+    # getUserInput(client_socket)
     # raise NotImplementedError('Your implementation here.')
 
 
-def getUserInput(connection):
-    userInput = input("> ")
-    try:
-        command = userInput.split()[0]
-    except:
-        command = ""
-    try:
-        arguments = userInput.split()[1]
-    except:
-        arguments = ""
-    if(command == "cd"):
-        issue_cd(userInput,connection,eof_token)
-    elif(command == "mkdir"):
-        issue_mkdir(userInput,connection,eof_token)
-    elif(command=="rm"):
-        issue_rm(userInput,connection,eof_token)
-
-    elif(command == "ul"):
-        # issue_ul(userInput,connection,eof_token)
-        issue_ul([command,arguments],connection,eof_token)
-    elif(command == "dl"):
-        issue_dl([command,arguments],connection,eof_token)
-    elif(command=="exit"):
-        print('Exiting the application.')
-        connection.sendall("exit".encode())
-    else:
-        print("Please Enter valid command")
+# def getUserInput(connection):
 
 
 def main():
@@ -196,16 +174,39 @@ def main():
     # raise NotImplementedError('Your implementation here.')
 
     # initialize
-    connection = initialize(HOST,PORT)
+    connection = initialize(HOST, PORT)
 
     # get user input
-    
-
-    getUserInput(connection)
-
+    while True:
+        userInput = input("> ")
+        try:
+            command = userInput.split(" ", 1)[0]
+        except:
+            command = ""
+        try:
+            arguments = userInput.split(" ", 1)[1]
+        except:
+            arguments = ""
+        if (command == "cd"):
+            issue_cd(userInput, connection, eof_token)
+        elif (command == "mkdir"):
+            issue_mkdir(userInput, connection, eof_token)
+        elif (command == "rm"):
+            issue_rm(userInput, connection, eof_token)
+        elif (command == "ul"):
+            # issue_ul(userInput,connection,eof_token)
+            issue_ul([command, arguments], connection, eof_token)
+        elif (command == "dl"):
+            issue_dl([command, arguments], connection, eof_token)
+        elif (command == "exit"):
+            print('Exiting the application.')
+            connection.sendall("exit".encode())
+            break
+        else:
+            print("Please Enter valid command")
+        # getUserInput(connection)
 
     # call the corresponding command function or exit
-
 
     # print('Exiting the application.')
 

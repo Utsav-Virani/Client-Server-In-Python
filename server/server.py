@@ -64,11 +64,16 @@ def handle_cd(current_working_directory, new_working_directory):
     :return: absolute path of new current working directory
     """
     # print(current_working_directory,new_working_directory)
+    message="[LOG] Somthing Went wrong...  :("
     if new_working_directory == "..":
-        os.chdir("..")
-    elif " " not in new_working_directory:
         os.chdir(new_working_directory)
-    return get_working_directory_info(os.getcwd())
+        message="[LOG] Command executed successfully.  :)"
+    elif os.path.isdir(os.path.join(os.getcwd(),new_working_directory)) and os.path.exists(os.path.join(os.getcwd(),new_working_directory)):
+        os.chdir(new_working_directory)
+        message="[LOG] Command executed successfully.  :)"
+    else:
+        print("[LOG] Somthing Went wrong...  :(")
+    return message+"\n\n"+get_working_directory_info(os.getcwd())
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -78,9 +83,14 @@ def handle_mkdir(current_working_directory, directory_name):
     :param current_working_directory: string of current working directory
     :param directory_name: name of new sub directory
     """
-    if " " not in directory_name:
+    # if " " not in directory_name:
+    try:
         os.mkdir(os.path.join(os.getcwd(),directory_name))
-    return get_working_directory_info(os.getcwd())
+        message="[LOG] Command executed successfully.  :)"
+    except:
+        message="[LOG] Somthing Went wrong...  :("
+        print("[LOG] Somthing Went wrong...  :(")
+    return message+"\n\n"+get_working_directory_info(os.getcwd())
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -91,9 +101,16 @@ def handle_rm(current_working_directory, object_name):
     :param current_working_directory: string of current working directory
     :param object_name: name of sub directory or file to remove
     """
-    if " " not in object_name:
-        os.remove(os.path.join(os.getcwd(),object_name))
-    return get_working_directory_info(os.getcwd())
+    message="[LOG] Somthing Went wrong...  :("
+    if os.path.exists(os.path.join(os.getcwd(),object_name)):
+        if os.path.isfile(os.path.join(os.getcwd(),object_name)):
+            os.remove(os.path.join(os.getcwd(),object_name))
+            message="[LOG] Command executed successfully.  :)"
+        else:
+            os.rmdir(os.path.join(os.getcwd(),object_name)) 
+            print("[LOG] Somthing Went wrong...  :(")
+            message="[LOG] Command executed successfully.  :)"
+    return message+"\n\n"+get_working_directory_info(os.getcwd())
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -107,11 +124,16 @@ def handle_ul(current_working_directory, file_name, service_socket, eof_token):
     :param service_socket: active socket with the client to read the payload/contents from.
     :param eof_token: a token to indicate the end of the message.
     """
-    fileContent = receive_message_ending_with_token(service_socket,1024,eof_token)
-    with open(file_name, 'wb') as file:
-        file.write(fileContent)
-    file.close()
-    return get_working_directory_info(os.getcwd())
+    try:
+        fileContent = receive_message_ending_with_token(service_socket,1024,eof_token)
+        with open(file_name, 'wb') as file:
+            file.write(fileContent)
+        file.close()
+        message="[LOG] Command executed successfully.  :)"
+    except:
+        print("[LOG] Somthing Went wrong...  :(")
+        message="[LOG] Somthing Went wrong...  :("
+    return message+"\n\n"+get_working_directory_info(os.getcwd())
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -124,17 +146,21 @@ def handle_dl(current_working_directory, file_name, service_socket, eof_token):
     :param service_socket: active service socket with the client
     :param eof_token: a token to indicate the end of the message.
     """
-    with open(file_name, 'rb') as file:
-        fileContent = file.read()
-    fileContentWithToken = fileContent + eof_token.encode()
-    # print(f'[LOG]Uploding the file "{file_name}" to: server')
-    # print("fileContentWithToken",fileContentWithToken)
-    print(f'[LOG]Sending the file "{file_name}" to: client')
-    service_socket.sendall(fileContentWithToken)
-    print(f'[LOG]File "{file_name}" sent to: client')
-    print('Sending cwd.')
-    time.sleep(1)
-    return get_working_directory_info(os.getcwd())
+    try:
+        with open(file_name, 'rb') as file:
+            fileContent = file.read()
+        fileContentWithToken = fileContent + eof_token.encode()
+        # print(f'[LOG]Uploding the file "{file_name}" to: server')
+        # print("fileContentWithToken",fileContentWithToken)
+        print(f'[LOG]Sending the file "{file_name}" to: client')
+        service_socket.sendall(fileContentWithToken)
+        print(f'[LOG]File "{file_name}" sent to: client')
+        message="[LOG] Command executed successfully.  :)"
+    except:
+        print("[LOG] Somthing Went wrong...  :(")
+        message="[LOG] Somthing Went wrong...  :("
+    time.sleep(1.5)
+    return message+"\n\n"+get_working_directory_info(os.getcwd())
     # raise NotImplementedError('Your implementation here.')
 
 
@@ -161,14 +187,15 @@ class ClientThread(Thread):
 
 
         while True:
-            responce = self.service_socket.recv(1024).decode()
+            # responce = self.service_socket.recv(1024).decode()
+            responce = receive_message_ending_with_token(self.service_socket,1024,endOfFileToken).decode()
             # print("responce",responce)
             try:
-                command = responce.split()[0]
+                command = responce.split(" ",1)[0]
             except:
                 command = ""
             try:
-                arguments = responce.split()[1]
+                arguments = responce.split(" ",1)[1]
             except:
                 arguments = ""
             # get the command and arguments and call the corresponding method
@@ -184,7 +211,7 @@ class ClientThread(Thread):
                 self.service_socket.send((handle_ul(get_working_directory_info(_cwd),arguments,self.service_socket,endOfFileToken)+endOfFileToken).encode())
             elif(command == "dl"):
                 self.service_socket.send((handle_dl(get_working_directory_info(_cwd),arguments,self.service_socket,endOfFileToken)+endOfFileToken).encode())
-                print('Sent cwd.')
+                # print('Sent cwd.')
             elif(command=="exit"):
                 self.service_socket.close()
                 print('Connection closed from:', self.address)
