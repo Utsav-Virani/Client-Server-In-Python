@@ -191,7 +191,7 @@ class ClientThread(Thread):
             responce = receive_message_ending_with_token(self.service_socket,1024,endOfFileToken).decode()
             # print("responce",responce)
             try:
-                command = responce.split(" ",1)[0]
+                command = responce.split(" ",1)[0].lower()
             except:
                 command = ""
             try:
