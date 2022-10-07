@@ -180,7 +180,7 @@ def main():
     while True:
         userInput = input("> ")
         try:
-            command = userInput.split(" ", 1)[0]
+            command = userInput.split(" ", 1)[0].lower()
         except:
             command = ""
         try:
