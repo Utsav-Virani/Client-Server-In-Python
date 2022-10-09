@@ -65,13 +65,14 @@ def handle_cd(current_working_directory, new_working_directory):
     """
     # print(current_working_directory,new_working_directory)
     # message="[LOG] Somthing Went wrong...  :("
+    os.chdir(current_working_directory)
     if new_working_directory == "..":
-        os.chdir("..")
+        os.chdir(Path(current_working_directory).parent.absolute())
         # message="[LOG] Command executed successfully.  :)"
     elif os.path.exists(os.path.join(current_working_directory,new_working_directory)) and os.path.isdir(os.path.join(current_working_directory,new_working_directory)):
-        # print("\n\nbefore:\n",os.path.join(current_working_directory,new_working_directory))
+        # print("\n\nbefore:\n",pathJoin)
         os.chdir(os.path.join(current_working_directory,new_working_directory))
-        # print("\n\nafter:\n",os.path.join(current_working_directory,new_working_directory))
+        # print("\n\nafter:\n",pathJoin)
         # message="[LOG] Command executed successfully.  :)"
     else:
         print("[LOG] Somthing Went wrong...  :(")
@@ -207,17 +208,17 @@ class ClientThread(Thread):
             cwd=self.workingDirectory
             if(command == "cd"):
                 # print("Sending message from server.....")
-                cwd = handle_cd(self.workingDirectory,arguments)
+                cwd = handle_cd(cwd,arguments)
                 # print("\n\n\ncwd\n",cwd)
                 # print("Message sent from server.....")
             elif(command == "mkdir"):
-                handle_mkdir(self.workingDirectory,arguments)
+                handle_mkdir(cwd,arguments)
             elif(command=="rm"):
-                handle_rm(self.workingDirectory,arguments)
+                handle_rm(cwd,arguments)
             elif(command == "ul"):
-                handle_ul(self.workingDirectory,arguments,self.service_socket,endOfFileToken)
+                handle_ul(cwd,arguments,self.service_socket,endOfFileToken)
             elif(command == "dl"):
-                handle_dl(self.workingDirectory,arguments,self.service_socket,endOfFileToken)
+                handle_dl(cwd,arguments,self.service_socket,endOfFileToken)
                 # print('Sent cwd.')
             elif(command=="exit"):
                 self.service_socket.close()
