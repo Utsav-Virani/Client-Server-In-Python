@@ -69,9 +69,9 @@ def handle_cd(current_working_directory, new_working_directory):
         os.chdir("..")
         message="[LOG] Command executed successfully.  :)"
     elif os.path.exists(os.path.join(current_working_directory,new_working_directory)) and os.path.isdir(os.path.join(current_working_directory,new_working_directory)):
-        print("\n\nbefore:\n",os.path.join(current_working_directory,new_working_directory))
+        # print("\n\nbefore:\n",os.path.join(current_working_directory,new_working_directory))
         os.chdir(os.path.join(current_working_directory,new_working_directory))
-        print("\n\nafter:\n",os.path.join(current_working_directory,new_working_directory))
+        # print("\n\nafter:\n",os.path.join(current_working_directory,new_working_directory))
         message="[LOG] Command executed successfully.  :)"
     else:
         print("[LOG] Somthing Went wrong...  :(")
