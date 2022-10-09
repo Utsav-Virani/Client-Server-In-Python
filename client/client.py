@@ -1,4 +1,5 @@
 import socket
+import os
 
 
 def receive_message_ending_with_token(active_socket, buffer_size, eof_token):
@@ -119,10 +120,11 @@ def issue_ul(command_and_arg, client_socket, eof_token):
     """
     command, arguments = command_and_arg
     try:
+        # print("\n\ncwd:\n",os.getcwd())
         with open(arguments, 'rb') as file:
             fileContent = file.read()
         fileContentWithToken = fileContent + eof_token.encode()
-        client_socket.sendall(" ".join(command_and_arg+eof_token).encode())
+        client_socket.sendall((" ".join(command_and_arg)+eof_token).encode())
         print(f'[LOG]Uploding the file "{arguments}" to: server')
         # print("fileContentWithToken",fileContentWithToken)
         client_socket.sendall(fileContentWithToken)
@@ -147,17 +149,20 @@ def issue_dl(command_and_arg, client_socket, eof_token):
     """
     command, arguments = command_and_arg
     try:
-        client_socket.sendall(" ".join(command_and_arg+eof_token).encode())
+        client_socket.sendall((" ".join(command_and_arg)+eof_token).encode())
         print(f'[LOG]Waiting for server responce for the file "{arguments}"')
         fileContent = receive_message_ending_with_token(
             client_socket, 1024, eof_token)
         print(f'[LOG]File "{arguments}" recived from server')
         print(f'[LOG]Saving file "{arguments}" to the root folder.')
-        with open(arguments, 'wb') as file:
-            file.write(fileContent)
-        file.close()
-        print(f'[LOG]File "{arguments}" saved to the root folder.')
-        print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
+        if fileContent != b'404':
+            with open(arguments, 'wb') as file:
+                file.write(fileContent)
+            file.close()
+            print(f'[LOG]File "{arguments}" saved to the root folder.')
+            print(f'{receive_message_ending_with_token(client_socket,1024,eof_token).decode()}')
+        else:
+            print(str(fileContent))
     except:
         print("[LOG] Somthing Went wrong...  :(")
     # getUserInput(client_socket)
@@ -200,7 +205,7 @@ def main():
             issue_dl([command, arguments], connection, eof_token)
         elif (command == "exit"):
             print('Exiting the application.')
-            connection.sendall("exit".encode())
+            connection.sendall(("exit"+eof_token).encode())
             break
         else:
             print("Please Enter valid command")
